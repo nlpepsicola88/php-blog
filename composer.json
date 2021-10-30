@@ -1,0 +1,17 @@
+{
+    "name": "vasin/php-blog",
+    "type": "project",
+    "authors": [
+        {
+            "name": "Ildar Vasin",
+            "email": "vasinildar@mail.ru"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "slim/slim": "4.*",
+        "slim/psr7": "^1.5",
+        "guzzlehttp/psr7": "^2",
+        "twig/twig": "^3.0"
+    }
+}
