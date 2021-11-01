@@ -1,39 +1,70 @@
 <?php
-    use Psr\Http\Message\ResponseInterface as Response;
-    use Psr\Http\Message\ServerRequestInterface as Request;
-    use Slim\Factory\AppFactory;
-    use Twig\Environment;
-    use Twig\Loader\FilesystemLoader;
 
-    require __DIR__ . '/vendor/autoload.php';
+use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
+use Slim\Factory\AppFactory;
+use Twig\Environment;
+use Twig\Loader\FilesystemLoader;
+use Blog\PostMapper;
 
-    $loader = new Filesystemloader('templates');
-    $view = new Environment($loader);
+require __DIR__ . '/vendor/autoload.php';
 
-    $app = AppFactory::create();
-    $app->setBasePath("/blog/php-blog");
+$loader = new Filesystemloader('templates');
+$view = new Environment($loader);
 
-    $app->get('/', function (Request $request, Response $response, $args) use($view){
-        $body = $view -> render('index.twig');
-        $response->getBody()->write($body);
-        return $response;
-    });
+//БД
+$config = include 'config/database.php';
+$dsn = $config['dsn'];
+$username = $config['username'];
+$password = $config['password'];
 
-    $app->get('/about', function (Request $request, Response $response, $args) use($view){
-        $body = $view -> render('about.twig',[
-            'name'=>'Ildar'
+try {
+    $connection = new PDO($dsn,$username,$password);
+    $connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $connection->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+} catch (PDOException $exception) {
+    echo 'Database error: ' . $exception->getMessage();
+    die();
+}
+
+$postMapper = new postMapper($connection);
+
+//приложение
+$app = AppFactory::create();
+$app->setBasePath("/blog/php-blog");
+$app->get('/', function ($request, $response, $args) use ($view, $postMapper)
+    {
+        $posts = $postMapper->getList('DESC');
+
+        $body = $view->render('index.twig', [
+            'posts' => $posts
         ]);
         $response->getBody()->write($body);
         return $response;
-    });
+    }
+);
 
-    $app->get('/{url_key}', function (Request $request, Response $response, $args) use($view){
-        $body = $view -> render('post.twig', [
-            'url_key' => $args ['url_key']
+$app->get('/about', function ($request, $response, $args) use($view){
+    $body = $view -> render('about.twig',[
+        'name'=>'Ildar'
+    ]);
+    $response->getBody()->write($body);
+    return $response;
+});
+
+$app->get('/{url_key}', function (Request $request, Response $response, $args) use ($view, $postMapper) {
+    $post = $postMapper->getByUrlKey((string) $args['url_key']);
+
+    if (empty($post)) {
+        $body = $view->render('not-found.twig');
+    } else {
+        $body = $view->render('post.twig', [
+            'post' => $post
         ]);
-        $response->getBody()->write($body);
-        return $response;
-    });
+    }
+    $response->getBody()->write($body);
+    return $response;
+});
+$app->run();
 
-    $app->run();
 ?>
