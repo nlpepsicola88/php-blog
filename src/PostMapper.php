@@ -6,9 +6,8 @@ namespace Blog;
 
 use PDO;
 
+class postMapper{
 
-class postMapper
-{
     private $connection;
 
     public function __construct(PDO $connection){
