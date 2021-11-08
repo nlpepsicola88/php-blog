@@ -25,16 +25,18 @@ class postMapper{
 
         return array_shift($result);
     }
-    public function getList(string $direction): ?array
+    public function getList($page = 1, $limit = 2,  $direction='ASC'): ?array
     {
         if (!in_array($direction, ['DESC', 'ASC'])) {
             throw new Exception('The direction is not supported.');
         }
-        $statement = $this->connection->prepare('SELECT * FROM blog_php.post ORDER BY published_date '. $direction);
+        $start = ($page - 1) * $limit;
+        $statement = $this->connection->prepare('SELECT * FROM blog_php.post ORDER BY published_date '. $direction.' LIMIT ' . $start . ',' . $limit);
 
         $statement->execute();
 
         return $statement->fetchAll();
     }
+
 }
 

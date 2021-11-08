@@ -34,6 +34,7 @@ $postMapper = new postMapper($connection);
 $app = AppFactory::create();
 $app->setBasePath("/blog/php-blog");
 
+//Посты
 $app->get('/', function (Request $request, Response $response)
     use ($view, $connection) {
     $latestPosts = new LatestPosts($connection);
@@ -46,6 +47,7 @@ $app->get('/', function (Request $request, Response $response)
     return $response;
 });
 
+//Страница о нас
 $app->get('/about', function ($request, $response, $args) use($view){
     $body = $view -> render('about.twig',[
         'name'=>'Ildar'
@@ -54,6 +56,24 @@ $app->get('/about', function ($request, $response, $args) use($view){
     return $response;
 });
 
+//Блог
+$app->get('/blog[/{page}]', function (Request $request, Response $response, $args)
+    use ($view, $connection) {
+    $latestPosts = new PostMapper($connection);
+
+    $page = isset($args['page']) ? (int) $args['page'] : 1;
+    $limit = 2;
+
+    $posts = $latestPosts->getList($page, $limit, 'DESC');
+
+    $body = $view->render('blog.twig', [
+        'posts' => $posts
+    ]);
+    $response->getBody()->write($body);
+    return $response;
+});
+
+//url
 $app->get('/{url_key}', function (Request $request, Response $response, $args) use ($view, $postMapper) {
     $post = $postMapper->getByUrlKey((string) $args['url_key']);
 
